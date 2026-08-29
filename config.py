@@ -11,10 +11,17 @@ RAIDERIO_BASE_URL = "https://raider.io/api/v1"
 RAID_SLUG = os.environ.get("RAID_SLUG", "the-venomous-abyss")
 DIFFICULTY = os.environ.get("DIFFICULTY", "mythic")
 
-# Slug des Bosses, dessen Pull-Historie angezeigt wird (i.d.R. der aktuell
-# umkämpfte / letzte Boss der Progression). Muss in der .env gesetzt werden.
-# Anleitung zum Herausfinden des Slugs: siehe README.md.
-BOSS_SLUG = os.environ.get("BOSS_SLUG", "")
+# Slug des Bosses, dessen Pull-Historie angezeigt wird. "latest" laesst
+# Raider.io automatisch den aktuell umkaempften/letzten Boss der Gilde waehlen
+# - genau das, was fuer den Race-to-World-First-Fortschritt gebraucht wird.
+# Kann in der .env auf einen konkreten Boss-Slug gesetzt werden, falls mal
+# ein bestimmter (nicht der aktuellste) Boss angezeigt werden soll.
+BOSS_SLUG = os.environ.get("BOSS_SLUG", "latest")
+
+# "until_kill" liefert nur die Attempts seit dem letzten Kill (bzw. seit
+# Beginn der Progression, falls noch kein Kill vorliegt) - also genau die
+# aktuell laufenden Pull-Versuche.
+PERIOD = os.environ.get("PERIOD", "until_kill")
 
 # --- Gilden ---------------------------------------------------------------
 # "guild"/"realm"/"region" müssen exakt den Raider.io-Slugs entsprechen

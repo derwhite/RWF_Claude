@@ -2,6 +2,27 @@
 Client fuer die Raider.io "Live Tracking - Boss Attempts" API.
 
 https://raider.io/api#/Live%20Tracking%20-%20Raiding/getApiV1LivetrackingGuildBossattempts
+
+Reales Antwortformat (Stand 08/2026), ermittelt anhand einer echten
+API-Response:
+
+{
+  "guild": {...},
+  "raid": {"name": "The Venomous Abyss", "slug": "the-venomous-abyss", ...},
+  "boss": {"name": "The Coiled Altar", "slug": "the-coiled-altar", "ordinal": 6, ...},
+  "attempts": [
+    {
+      "pullStartedAt": "2026-08-26T21:55:20.734Z",
+      "overallPercent": 90.45,
+      "isSuccess": false,
+      "encounter": {"durationMs": 48477}
+    },
+    ...
+  ]
+}
+
+Wichtig: Es gibt KEINE Pull-Nummer im Datensatz. Die Nummerierung wird
+hier anhand der chronologischen Reihenfolge (pullStartedAt) vergeben.
 """
 import time
 from datetime import datetime, timezone
@@ -14,6 +35,7 @@ from config import (
     RAID_SLUG,
     DIFFICULTY,
     BOSS_SLUG,
+    PERIOD,
     GUILDS,
     CACHE_TTL_SECONDS,
 )
@@ -48,12 +70,6 @@ def fetch_boss_attempts_raw(guild_key: str) -> dict:
     if guild_key not in GUILDS:
         raise RaiderIOError(f"Unbekannte Gilde: {guild_key}")
 
-    if not BOSS_SLUG:
-        raise RaiderIOError(
-            "Kein BOSS_SLUG konfiguriert. Bitte BOSS_SLUG in der .env setzen "
-            "(siehe README.md, Abschnitt 'Boss-Slug herausfinden')."
-        )
-
     cache_key = f"attempts:{guild_key}:{BOSS_SLUG}"
     cached = _cache_get(cache_key)
     if cached is not None:
@@ -61,12 +77,13 @@ def fetch_boss_attempts_raw(guild_key: str) -> dict:
 
     guild_cfg = GUILDS[guild_key]
     params = {
-        "raidSlug": RAID_SLUG,
-        "bossSlug": BOSS_SLUG,
+        "raid": RAID_SLUG,
+        "boss": BOSS_SLUG,
         "difficulty": DIFFICULTY,
         "region": guild_cfg["region"],
         "realm": guild_cfg["realm"],
         "guild": guild_cfg["guild"],
+        "period": PERIOD,
     }
     if RAIDERIO_API_KEY:
         params["access_key"] = RAIDERIO_API_KEY
@@ -87,8 +104,8 @@ def fetch_boss_attempts_raw(guild_key: str) -> dict:
         )
     if resp.status_code == 404:
         raise RaiderIOError(
-            "Raider.io API antwortete mit 404 - pruefe RAID_SLUG, BOSS_SLUG, "
-            "sowie guild/realm/region in config.py."
+            "Raider.io API antwortete mit 404 - pruefe RAID_SLUG/BOSS_SLUG sowie "
+            "guild/realm/region in config.py."
         )
     if resp.status_code != 200:
         raise RaiderIOError(
@@ -102,55 +119,6 @@ def fetch_boss_attempts_raw(guild_key: str) -> dict:
 
     _cache_set(cache_key, data)
     return data
-
-
-# ---------------------------------------------------------------------------
-# WICHTIG - Feld-Mapping
-# ---------------------------------------------------------------------------
-# Raider.io stellt fuer die Live-Tracking-Endpunkte keine maschinenlesbare
-# Swagger-/OpenAPI-Datei bereit (die Doku-Seite ist eine JS-App). Die unten
-# gelisteten Kandidaten-Keys decken die in der Praxis gebraeuchlichen
-# Namensvarianten ab. Falls die Tabelle nach dem ersten Start leere Werte
-# ("-") zeigt:
-#
-#   1. In der .env DEBUG_ROUTES=true setzen und den Server neu starten
-#   2. /debug/<guild-key> aufrufen (z.B. /debug/liquid) -> zeigt rohes JSON
-#   3. Die tatsaechlichen Feldnamen unten in _CANDIDATE_KEYS ergaenzen
-#
-# Das ist der einzige Ort im Code, der bei abweichenden Feldnamen angepasst
-# werden muss.
-_CANDIDATE_KEYS = {
-    "pull_number": ["pullNumber", "pull_number", "attemptNumber", "attempt_number", "number"],
-    "percent": [
-        "healthPercent",
-        "health_percent",
-        "percent",
-        "bestPercent",
-        "best_percent",
-        "pullPercent",
-        "bossPercent",
-    ],
-    "is_kill": ["isKill", "is_kill", "kill", "isDefeated", "defeated"],
-    "duration_seconds": ["durationSeconds", "duration_seconds", "duration", "fightLength", "length"],
-    "recorded_at": [
-        "recordedAt",
-        "recorded_at",
-        "pulledAt",
-        "pulled_at",
-        "createdAt",
-        "created_at",
-        "timestamp",
-        "startedAt",
-    ],
-    "wipe_reason": ["wipeReason", "wipe_reason", "deathReason", "killReason"],
-}
-
-
-def _first_present(raw: dict, keys: list):
-    for k in keys:
-        if k in raw and raw[k] is not None:
-            return raw[k]
-    return None
 
 
 def _format_timestamp(value):
@@ -171,15 +139,35 @@ def _format_timestamp(value):
     return str(value)
 
 
-def normalize_attempt(raw: dict) -> dict:
+def _parse_sort_ts(value):
+    """Liefert einen sortierbaren Zeit-Wert fuer die chronologische Sortierung."""
+    if value is None:
+        return 0
+    try:
+        if isinstance(value, (int, float)):
+            return value
+        if isinstance(value, str):
+            v = value.replace("Z", "+00:00")
+            return datetime.fromisoformat(v).timestamp()
+    except (ValueError, TypeError):
+        pass
+    return 0
+
+
+def normalize_attempt(raw: dict, pull_number: int) -> dict:
     """Bildet ein rohes Attempt-Objekt der API auf ein einheitliches Format ab."""
+    encounter = raw.get("encounter") or {}
+    duration_ms = encounter.get("durationMs")
+
     normalized = {
-        "pull_number": _first_present(raw, _CANDIDATE_KEYS["pull_number"]),
-        "percent": _first_present(raw, _CANDIDATE_KEYS["percent"]),
-        "is_kill": bool(_first_present(raw, _CANDIDATE_KEYS["is_kill"])),
-        "duration_seconds": _first_present(raw, _CANDIDATE_KEYS["duration_seconds"]),
-        "recorded_at": _format_timestamp(_first_present(raw, _CANDIDATE_KEYS["recorded_at"])),
-        "wipe_reason": _first_present(raw, _CANDIDATE_KEYS["wipe_reason"]),
+        "pull_number": pull_number,
+        "percent": raw.get("overallPercent"),
+        "is_kill": bool(raw.get("isSuccess")),
+        "duration_seconds": round(duration_ms / 1000) if duration_ms is not None else None,
+        "recorded_at": _format_timestamp(raw.get("pullStartedAt")),
+        # wipeReason ist aktuell kein Teil der beobachteten API-Antwort,
+        # bleibt hier als Fallback falls Raider.io das Feld ergaenzt.
+        "wipe_reason": raw.get("wipeReason"),
     }
     if normalized["is_kill"]:
         normalized["percent"] = 0.0
@@ -188,7 +176,7 @@ def normalize_attempt(raw: dict) -> dict:
 
 
 def _extract_attempts_list(raw_response) -> list:
-    """Die API kann die Liste direkt oder unter einem Wrapper-Key liefern."""
+    """Die API liefert die Liste unter dem Key 'attempts'."""
     if isinstance(raw_response, list):
         return raw_response
     if isinstance(raw_response, dict):
@@ -199,16 +187,37 @@ def _extract_attempts_list(raw_response) -> list:
     return []
 
 
-def get_attempts(guild_key: str, mode: str, n: int) -> list:
+def get_boss_meta(raw_response: dict) -> dict:
+    """Liest Bossname/Raidname aus der Antwort (fuer die Anzeige im UI-Header)."""
+    if not isinstance(raw_response, dict):
+        return {}
+    boss = raw_response.get("boss") or {}
+    raid = raw_response.get("raid") or {}
+    return {
+        "boss_name": boss.get("name"),
+        "boss_ordinal": boss.get("ordinal"),
+        "raid_name": raid.get("name"),
+    }
+
+
+def get_attempts(guild_key: str, mode: str, n: int):
     """
     Holt und normalisiert die Boss-Attempts einer Gilde.
+
+    Rueckgabe: (attempts, meta)
+      - attempts: Liste normalisierter Pulls, sortiert nach `mode`
+      - meta: Zusatzinfos (Bossname, Raidname) fuer die Anzeige
 
     mode == "last": sortiert nach Pull-Nummer absteigend (neueste zuerst)
     mode == "best": sortiert nach Boss-HP% aufsteigend (beste/niedrigste zuerst)
     """
     raw_response = fetch_boss_attempts_raw(guild_key)
     raw_attempts = _extract_attempts_list(raw_response)
-    attempts = [normalize_attempt(a) for a in raw_attempts]
+
+    # Pull-Nummer wird von der API nicht mitgeliefert -> anhand der
+    # chronologischen Reihenfolge (pullStartedAt) vergeben.
+    raw_attempts_sorted = sorted(raw_attempts, key=lambda a: _parse_sort_ts(a.get("pullStartedAt")))
+    attempts = [normalize_attempt(a, pull_number=i + 1) for i, a in enumerate(raw_attempts_sorted)]
 
     if mode == "best":
         attempts.sort(
@@ -220,4 +229,5 @@ def get_attempts(guild_key: str, mode: str, n: int) -> list:
     else:  # "last"
         attempts.sort(key=lambda a: (a["pull_number"] or 0), reverse=True)
 
-    return attempts[:n]
+    meta = get_boss_meta(raw_response)
+    return attempts[:n], meta

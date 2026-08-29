@@ -10,7 +10,11 @@
       <span class="brand-mark" aria-hidden="true"></span>
       <div class="brand-text">
         <span class="brand-title">Race to World First</span>
-        <span class="brand-sub">{{ raid_slug | replace('-', ' ') | title }} · Mythic</span>
+        <span class="brand-sub">
+          {{ meta.raid_name or (raid_slug | replace('-', ' ') | title) }}
+          {%- if meta.boss_name %} · {{ meta.boss_name }}{% if meta.boss_ordinal %} (#{{ meta.boss_ordinal }}){% endif %}{% endif %}
+          · {{ difficulty | capitalize }}
+        </span>
       </div>
     </div>
     <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Hell-/Dunkelmodus umschalten">

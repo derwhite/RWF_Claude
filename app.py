@@ -39,8 +39,9 @@ def table_view(mode, n):
 
     error = None
     attempts = []
+    meta = {}
     try:
-        attempts = get_attempts(guild_key, mode, n)
+        attempts, meta = get_attempts(guild_key, mode, n)
     except RaiderIOError as exc:
         error = str(exc)
 
@@ -52,6 +53,7 @@ def table_view(mode, n):
         guilds=GUILDS,
         guild=GUILDS[guild_key],
         attempts=attempts,
+        meta=meta,
         error=error,
         raid_slug=RAID_SLUG,
         difficulty=DIFFICULTY,
