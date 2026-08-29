@@ -6,6 +6,8 @@ anzeigt.
 
 - `/last/<n>` – die letzten `n` Pulls (neueste zuerst)
 - `/best/<n>` – die `n` besten Pulls (niedrigste Boss-HP% zuerst)
+- `/last/<n>/compare` bzw. `/best/<n>/compare` – alle Gilden nebeneinander
+  in einer Tabelle (Rang 1 = neuester bzw. bester Pull je Gilde)
 - Gilde wird per `?guild=liquid|echo|method` gewählt (Tabs in der UI)
 - Dark-/Light-Mode per Switch oben rechts
 
@@ -44,7 +46,7 @@ Startet über `waitress` auf `http://0.0.0.0:8080` (Host/Port über `.env`
 Reverse Proxy (nginx/Caddy) hängen, der TLS terminiert und an Port 8080
 weiterleitet.
 
-## 5. API-Antwortformat
+## 4. API-Antwortformat
 
 Das Parsing in `raiderio_client.py` basiert auf einer echten Beispiel-
 Antwort der API (`pullStartedAt`, `overallPercent`, `isSuccess`,
@@ -64,27 +66,52 @@ zeigen:
 Schick mir bei Bedarf einfach den Inhalt von `/debug/<guild>`, dann
 passe ich das direkt für dich an.
 
-## 6. Gilden / Raid ändern
+## 5. Gilden / Raid ändern
 
 Alles Guild- und Raid-bezogene steht zentral in `config.py`
 (`GUILDS`, `RAID_SLUG`, `DIFFICULTY`). Neue Gilde hinzufügen = neuer
 Eintrag im `GUILDS`-Dict (inkl. Akzentfarbe für die Tabs).
 
+## 6. Phasen-Anzeige (P1/P2/...)
+
+Raider.io liefert keine Phaseninformationen. `phases.py` bietet daher eine
+eigene Funktion `get_phase(encounter_id, overall_percent, duration_seconds)`,
+die anhand von manuell hinterlegten Grenzwerten (`PHASE_DEFINITIONS`) eine
+Phase wie "P1" zurückgibt – wahlweise Prozent-basiert (z. B. P1: 100-70%)
+oder Zeit-basiert (z. B. P1: erste 2 Minuten). Die `encounterId` des
+aktuellen Bosses steht klein im Seiten-Header (z. B. `#197169`).
+
+```python
+# phases.py
+PHASE_DEFINITIONS = {
+    197169: {
+        "mode": "percent",
+        "phases": [("P1", 100), ("P2", 70), ("P3", 40)],
+    },
+}
+```
+
+Ohne Eintrag für eine `encounterId` wird einfach keine Phase angezeigt.
+
 ## Projektstruktur
 
 ```
 rtwf-tracker/
-├── app.py              Flask-Routen (/last/<n>, /best/<n>, /debug/<g>)
-├── raiderio_client.py   API-Aufruf, Caching, Feld-Normalisierung
+├── app.py              Flask-Routen (/last/<n>, /best/<n>, /compare, /debug/<g>)
+├── raiderio_client.py   API-Aufruf, Caching, Feld-Normalisierung, Phasen-Zuordnung
+├── phases.py             Boss-Phase (P1/P2/...) aus HP%/Dauer ableiten
 ├── config.py             Gilden, Raid-Konfiguration, .env-Anbindung
 ├── serve.py              Produktions-Start via waitress
 ├── requirements.txt
+├── pyproject.toml
 ├── .env.example
 ├── templates/
 │   ├── base.html
-│   ├── table.html         Haupttabelle inkl. Tabs/Umschalter
+│   ├── _nav.html          Gemeinsame Navigation (Gilden-Tabs, Modus, Anzahl)
+│   ├── table.html          Einzelgilden-Tabelle
+│   ├── compare.html        Alle Gilden nebeneinander
 │   └── error.html
 └── static/
-    ├── style.css           Dark/Light Theme, Boss-HP-Balken
+    ├── style.css           Dark/Light Theme, Boss-HP-Balken, Compare-Tabelle
     └── script.js           Theme-Switch, eigene Anzahl-Eingabe
 ```

@@ -1,0 +1,47 @@
+{% macro render_nav(mode, n, guild_key, guilds) %}
+{% set is_compare = guild_key == 'compare' %}
+<nav class="guild-tabs" aria-label="Ansicht waehlen">
+  {% for key, g in guilds.items() %}
+  <a href="{{ url_for('table_view', mode=mode, n=n, guild=key) }}"
+     class="guild-tab{{ ' active' if key == guild_key else '' }}"
+     style="--tab-accent: {{ g.color }}">{{ g.label }}</a>
+  {% endfor %}
+  <a href="{{ url_for('compare_view', mode=mode, n=n) }}"
+     class="guild-tab compare-tab{{ ' active' if is_compare else '' }}">⇄ Vergleich</a>
+</nav>
+
+<div class="controls">
+  <div class="mode-toggle" role="tablist" aria-label="Sortierung">
+    {% if is_compare %}
+    <a role="tab" aria-selected="{{ 'true' if mode == 'last' else 'false' }}"
+       href="{{ url_for('compare_view', mode='last', n=n) }}"
+       class="{{ 'active' if mode == 'last' else '' }}">Letzte Pulls</a>
+    <a role="tab" aria-selected="{{ 'true' if mode == 'best' else 'false' }}"
+       href="{{ url_for('compare_view', mode='best', n=n) }}"
+       class="{{ 'active' if mode == 'best' else '' }}">Beste Pulls</a>
+    {% else %}
+    <a role="tab" aria-selected="{{ 'true' if mode == 'last' else 'false' }}"
+       href="{{ url_for('table_view', mode='last', n=n, guild=guild_key) }}"
+       class="{{ 'active' if mode == 'last' else '' }}">Letzte Pulls</a>
+    <a role="tab" aria-selected="{{ 'true' if mode == 'best' else 'false' }}"
+       href="{{ url_for('table_view', mode='best', n=n, guild=guild_key) }}"
+       class="{{ 'active' if mode == 'best' else '' }}">Beste Pulls</a>
+    {% endif %}
+  </div>
+
+  <div class="n-select">
+    <span class="n-label">Anzahl</span>
+    {% for preset in [10, 20, 50, 100] %}
+      {% if is_compare %}
+      <a href="{{ url_for('compare_view', mode=mode, n=preset) }}" class="{{ 'active' if preset == n else '' }}">{{ preset }}</a>
+      {% else %}
+      <a href="{{ url_for('table_view', mode=mode, n=preset, guild=guild_key) }}" class="{{ 'active' if preset == n else '' }}">{{ preset }}</a>
+      {% endif %}
+    {% endfor %}
+    <form class="n-custom" data-mode="{{ mode }}" data-guild="{{ guild_key }}" data-compare="{{ 'true' if is_compare else 'false' }}">
+      <input type="number" name="n" min="1" max="200" placeholder="eigene Zahl" inputmode="numeric">
+      <button type="submit">Los</button>
+    </form>
+  </div>
+</div>
+{% endmacro %}

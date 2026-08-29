@@ -62,6 +62,42 @@ def table_view(mode, n):
     )
 
 
+@app.route("/<any(last,best):mode>/<int:n>/compare")
+def compare_view(mode, n):
+    n = _clamp_n(n)
+
+    columns = []
+    for key, g in GUILDS.items():
+        try:
+            attempts, meta = get_attempts(key, mode, n)
+            columns.append({"key": key, "guild": g, "attempts": attempts, "meta": meta, "error": None})
+        except RaiderIOError as exc:
+            columns.append({"key": key, "guild": g, "attempts": [], "meta": {}, "error": str(exc)})
+
+    # Zeilen bilden: Zeile i enthaelt fuer jede Gilde deren i-ten Pull in
+    # der jeweiligen Sortierung (last: neuester zuerst, best: bester zuerst).
+    # Gilden mit weniger Eintraegen liefern ab da None (Zelle bleibt leer).
+    rows = []
+    for i in range(n):
+        row = [col["attempts"][i] if i < len(col["attempts"]) else None for col in columns]
+        if any(cell is not None for cell in row):
+            rows.append(row)
+
+    display_meta = next((col["meta"] for col in columns if col["meta"].get("boss_name")), {})
+
+    return render_template(
+        "compare.html",
+        mode=mode,
+        n=n,
+        guilds=GUILDS,
+        columns=columns,
+        rows=rows,
+        meta=display_meta,
+        raid_slug=RAID_SLUG,
+        difficulty=DIFFICULTY,
+    )
+
+
 if DEBUG_ROUTES:
 
     @app.route("/debug/<guild_key>")

@@ -71,6 +71,10 @@ a { color: inherit; text-decoration: none; }
   min-height: 80vh;
 }
 
+.page-wide {
+  max-width: 1180px;
+}
+
 /* --- Topbar --------------------------------------------------------- */
 
 .topbar {
@@ -170,6 +174,20 @@ html[data-theme="light"] .theme-icon-light { display: inline; }
   height: 2px;
   background: var(--tab-accent, #5b8def);
   border-radius: 2px 2px 0 0;
+}
+
+.compare-tab {
+  margin-left: auto;
+  color: var(--text-dim);
+}
+
+.compare-tab.active {
+  color: var(--text);
+  border-bottom-color: var(--text-dim);
+}
+
+.compare-tab.active::after {
+  background: var(--text-dim);
 }
 
 /* --- Controls row ------------------------------------------------------- */
@@ -311,6 +329,106 @@ html[data-theme="light"] .theme-icon-light { display: inline; }
 .col-hp { width: 220px; }
 .col-status { width: 110px; }
 
+/* --- Compare table (Gilden nebeneinander) --------------------------------- */
+
+.compare-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.compare-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+
+.compare-table thead th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  white-space: nowrap;
+}
+
+.compare-table thead th:not(.col-rank) {
+  box-shadow: inset 0 -2px 0 var(--col-accent, transparent);
+}
+
+.compare-th-label { color: var(--text); }
+
+.col-error-flag {
+  margin-left: 6px;
+  color: var(--hp-high);
+  cursor: help;
+}
+
+.compare-table .col-rank {
+  width: 44px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.compare-table tbody td {
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  padding: 0;
+}
+
+.compare-table tbody tr:last-child td { border-bottom: none; }
+
+.compare-table td.col-rank {
+  padding: 10px 8px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12.5px;
+}
+
+.compare-cell {
+  min-width: 148px;
+  border-left: 1px solid var(--border);
+}
+
+.cc-wrap {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cc-wrap.kill { background: var(--kill-bg); }
+
+.cc-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cc-percent { font-size: 14px; font-weight: 600; }
+
+.cc-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.cc-empty {
+  display: block;
+  padding: 14px 12px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.cc-empty-row {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-dim);
+}
+
 /* HP bar: bildet die Restlebensenergie des Bosses ab, aehnlich einer
    ingame Bosshealthbar - schrumpft mit sinkendem Prozentwert. */
 .hp-bar-wrap {
@@ -342,6 +460,23 @@ html[data-theme="light"] .theme-icon-light { display: inline; }
   text-align: right;
   color: var(--text-dim);
   font-size: 12.5px;
+}
+
+.phase-tag {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: color-mix(in srgb, var(--guild-accent, #5b8def) 16%, transparent);
+  color: var(--guild-accent, #5b8def);
+}
+
+.encounter-id {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
 }
 
 /* --- Badges --------------------------------------------------------------- */

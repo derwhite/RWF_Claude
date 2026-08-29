@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_nav.html" import render_nav %}
+
+{% block title %}Vergleich · {{ 'Beste Pulls' if mode == 'best' else 'Letzte Pulls' }} · Race to World First{% endblock %}
+
+{% block content %}
+<div class="page page-wide">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="brand-text">
+        <span class="brand-title">Race to World First</span>
+        <span class="brand-sub">
+          {{ meta.raid_name or (raid_slug | replace('-', ' ') | title) }}
+          {%- if meta.boss_name %} · {{ meta.boss_name }}{% if meta.boss_ordinal %} (#{{ meta.boss_ordinal }}){% endif %}{% endif %}
+          · {{ difficulty | capitalize }}
+        </span>
+      </div>
+    </div>
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Hell-/Dunkelmodus umschalten">
+      <span class="theme-icon-dark">🌙</span>
+      <span class="theme-icon-light">☀️</span>
+    </button>
+  </header>
+
+  {{ render_nav(mode, n, 'compare', guilds) }}
+
+  <main class="content">
+    {% if not columns %}
+      <div class="banner banner-empty"><strong>Keine Gilden konfiguriert.</strong></div>
+    {% else %}
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th class="col-rank" title="{{ 'Rang: 1 = neuester Pull' if mode == 'last' else 'Rang: 1 = bester Pull' }}">#</th>
+              {% for col in columns %}
+              <th style="--col-accent: {{ col.guild.color }}">
+                <span class="compare-th-label">{{ col.guild.label }}</span>
+                {% if col.error %}<span class="col-error-flag" title="{{ col.error }}">⚠</span>{% endif %}
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% if not rows %}
+            <tr><td colspan="{{ columns|length + 1 }}" class="cc-empty-row">Keine Pull-Daten gefunden.</td></tr>
+            {% endif %}
+            {% for row in rows %}
+            <tr>
+              <td class="mono col-rank">{{ loop.index }}</td>
+              {% for cell in row %}
+              <td class="compare-cell" style="--col-accent: {{ columns[loop.index0].guild.color }}">
+                {% if cell %}
+                  <div class="cc-wrap{{ ' kill' if cell.is_kill else '' }}">
+                    <div class="cc-top">
+                      <span class="cc-percent mono">{{ '%.1f%%'|format(cell.percent) if cell.percent is not none else '–' }}</span>
+                      {% if cell.phase %}<span class="phase-tag">{{ cell.phase }}</span>{% endif %}
+                      {% if cell.is_kill %}<span class="badge badge-kill">Kill</span>{% endif %}
+                    </div>
+                    <div class="hp-bar-wrap">
+                      <div class="hp-bar" style="--pct: {{ cell.percent if cell.percent is not none else 100 }}%"></div>
+                    </div>
+                    <div class="cc-meta mono">#{{ cell.pull_number }} · {{ cell.duration or '–' }} · {{ cell.recorded_at or '–' }}</div>
+                  </div>
+                {% else %}
+                  <span class="cc-empty">–</span>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </main>
+
+  <footer class="page-footer">
+    <span>Daten von <a href="https://raider.io" target="_blank" rel="noopener">raider.io</a></span>
+  </footer>
+</div>
+{% endblock %}

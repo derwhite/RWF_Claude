@@ -29,8 +29,14 @@
       value = Math.min(value, 200);
 
       var mode = customForm.getAttribute("data-mode");
-      var guild = customForm.getAttribute("data-guild");
-      window.location.href = "/" + mode + "/" + value + "?guild=" + encodeURIComponent(guild);
+      var isCompare = customForm.getAttribute("data-compare") === "true";
+
+      if (isCompare) {
+        window.location.href = "/" + mode + "/" + value + "/compare";
+      } else {
+        var guild = customForm.getAttribute("data-guild");
+        window.location.href = "/" + mode + "/" + value + "?guild=" + encodeURIComponent(guild);
+      }
     });
   }
 })();

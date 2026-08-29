@@ -30,6 +30,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+import phases
 from config import (
     RAIDERIO_API_KEY,
     RAIDERIO_BASE_URL,
@@ -213,7 +214,7 @@ def _extract_attempts_list(raw_response) -> list:
 
 
 def get_boss_meta(raw_response: dict) -> dict:
-    """Liest Bossname/Raidname aus der Antwort (fuer die Anzeige im UI-Header)."""
+    """Liest Bossname/Raidname/encounterId aus der Antwort (fuer Anzeige + Phasen-Lookup)."""
     if not isinstance(raw_response, dict):
         return {}
     boss = raw_response.get("boss") or {}
@@ -222,6 +223,7 @@ def get_boss_meta(raw_response: dict) -> dict:
         "boss_name": boss.get("name"),
         "boss_ordinal": boss.get("ordinal"),
         "raid_name": raid.get("name"),
+        "encounter_id": boss.get("encounterId"),
     }
 
 
@@ -244,6 +246,11 @@ def get_attempts(guild_key: str, mode: str, n: int):
     raw_attempts_sorted = sorted(raw_attempts, key=lambda a: _parse_sort_ts(a.get("pullStartedAt")))
     attempts = [normalize_attempt(a, pull_number=i + 1) for i, a in enumerate(raw_attempts_sorted)]
 
+    meta = get_boss_meta(raw_response)
+    encounter_id = meta.get("encounter_id")
+    for a in attempts:
+        a["phase"] = phases.get_phase(encounter_id, a["percent"], a["duration_seconds"])
+
     if mode == "best":
         attempts.sort(
             key=lambda a: (
@@ -254,5 +261,4 @@ def get_attempts(guild_key: str, mode: str, n: int):
     else:  # "last"
         attempts.sort(key=lambda a: (a["pull_number"] or 0), reverse=True)
 
-    meta = get_boss_meta(raw_response)
     return attempts[:n], meta
