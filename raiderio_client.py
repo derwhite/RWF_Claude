@@ -26,6 +26,7 @@ hier anhand der chronologischen Reihenfolge (pullStartedAt) vergeben.
 """
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -38,11 +39,20 @@ from config import (
     PERIOD,
     GUILDS,
     CACHE_TTL_SECONDS,
+    TIMEZONE,
 )
 
 
 class RaiderIOError(Exception):
     """Fehler beim Abruf oder Verarbeiten der Raider.io API-Antwort."""
+
+
+try:
+    _LOCAL_TZ = ZoneInfo(TIMEZONE)
+except Exception:
+    print(f"WARNUNG: Zeitzone '{TIMEZONE}' konnte nicht geladen werden, nutze UTC. "
+          f"Falls dies unter Windows passiert: 'pip install tzdata' (siehe requirements.txt).")
+    _LOCAL_TZ = timezone.utc
 
 
 # ---------------------------------------------------------------------------
@@ -122,18 +132,23 @@ def fetch_boss_attempts_raw(guild_key: str) -> dict:
 
 
 def _format_timestamp(value):
-    """Formatiert Unix-Timestamps (s oder ms) oder ISO-Strings als dd.mm.yyyy HH:MM."""
+    """Formatiert Unix-Timestamps (s oder ms) oder ISO-Strings (UTC) in die
+    konfigurierte lokale Zeitzone (TIMEZONE, siehe config.py) als dd.mm.yyyy HH:MM."""
     if value is None:
         return None
     try:
         if isinstance(value, (int, float)):
             ts = value / 1000 if value > 1e12 else value
             dt = datetime.fromtimestamp(ts, tz=timezone.utc)
-            return dt.strftime("%d.%m.%Y %H:%M")
-        if isinstance(value, str):
+        elif isinstance(value, str):
             v = value.replace("Z", "+00:00")
             dt = datetime.fromisoformat(v)
-            return dt.strftime("%d.%m.%Y %H:%M")
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            return str(value)
+        dt_local = dt.astimezone(_LOCAL_TZ)
+        return dt_local.strftime("%d.%m.%Y %H:%M")
     except (ValueError, TypeError, OSError):
         pass
     return str(value)

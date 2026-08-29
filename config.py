@@ -23,6 +23,10 @@ BOSS_SLUG = os.environ.get("BOSS_SLUG", "latest")
 # aktuell laufenden Pull-Versuche.
 PERIOD = os.environ.get("PERIOD", "until_kill")
 
+# Zeitzone, in der Zeitstempel (Pull-Zeitpunkte) angezeigt werden.
+# Liste gueltiger Namen: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+TIMEZONE = os.environ.get("TIMEZONE", "Europe/Berlin")
+
 # --- Gilden ---------------------------------------------------------------
 # "guild"/"realm"/"region" müssen exakt den Raider.io-Slugs entsprechen
 # (i.d.R. klein geschrieben, Leerzeichen als Bindestrich).
