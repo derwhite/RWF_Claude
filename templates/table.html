@@ -84,7 +84,7 @@
           <tr class="{{ 'kill-row' if a.is_kill else '' }}{{ ' best-row' if mode == 'best' and loop.index == 1 and not a.is_kill else '' }}">
             <td class="mono col-pull">#{{ a.pull_number if a.pull_number is not none else '–' }}</td>
             <td class="mono col-time">{{ a.recorded_at or '–' }}</td>
-            <td class="mono col-duration">{{ (a.duration_seconds ~ 's') if a.duration_seconds is not none else '–' }}</td>
+            <td class="mono col-duration">{{ a.duration if a.duration is not none else '–' }}</td>
             <td class="col-hp">
               <div class="hp-bar-wrap">
                 <div class="hp-bar" style="--pct: {{ a.percent if a.percent is not none else 100 }}%"></div>

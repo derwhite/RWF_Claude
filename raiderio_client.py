@@ -139,6 +139,15 @@ def _format_timestamp(value):
     return str(value)
 
 
+def _format_duration(seconds):
+    """Formatiert eine Sekundenzahl als MM:SS."""
+    if seconds is None:
+        return None
+    seconds = int(round(seconds))
+    minutes, secs = divmod(seconds, 60)
+    return f"{minutes}:{secs:02d}"
+
+
 def _parse_sort_ts(value):
     """Liefert einen sortierbaren Zeit-Wert fuer die chronologische Sortierung."""
     if value is None:
@@ -164,6 +173,7 @@ def normalize_attempt(raw: dict, pull_number: int) -> dict:
         "percent": raw.get("overallPercent"),
         "is_kill": bool(raw.get("isSuccess")),
         "duration_seconds": round(duration_ms / 1000) if duration_ms is not None else None,
+        "duration": _format_duration(duration_ms / 1000) if duration_ms is not None else None,
         "recorded_at": _format_timestamp(raw.get("pullStartedAt")),
         # wipeReason ist aktuell kein Teil der beobachteten API-Antwort,
         # bleibt hier als Fallback falls Raider.io das Feld ergaenzt.
