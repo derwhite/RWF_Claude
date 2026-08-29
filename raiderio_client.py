@@ -61,6 +61,12 @@ except Exception:
 # ---------------------------------------------------------------------------
 _cache: dict = {}
 
+# Separater, langlebiger Cache nur fuer Gilden-Logos (aendert sich praktisch
+# nie waehrend eines Raid-Tiers). Wird bei jedem erfolgreichen API-Call
+# nebenbei befuellt, damit z.B. die Navigation auch ohne eigenen API-Call
+# pro Tab ein Icon zeigen kann, sobald eine Gilde einmal geladen wurde.
+_guild_logo_cache: dict = {}
+
 
 def _cache_get(key):
     entry = _cache.get(key)
@@ -129,7 +135,18 @@ def fetch_boss_attempts_raw(guild_key: str) -> dict:
         raise RaiderIOError("Antwort der Raider.io API war kein gueltiges JSON.") from exc
 
     _cache_set(cache_key, data)
+
+    if isinstance(data, dict):
+        logo = (data.get("guild") or {}).get("logo")
+        if logo:
+            _guild_logo_cache[guild_key] = logo
+
     return data
+
+
+def get_guild_logo(guild_key: str):
+    """Liefert die zuletzt bekannte Logo-URL einer Gilde, falls schon einmal geladen."""
+    return _guild_logo_cache.get(guild_key)
 
 
 def _format_timestamp(value):
@@ -214,16 +231,18 @@ def _extract_attempts_list(raw_response) -> list:
 
 
 def get_boss_meta(raw_response: dict) -> dict:
-    """Liest Bossname/Raidname/encounterId aus der Antwort (fuer Anzeige + Phasen-Lookup)."""
+    """Liest Bossname/Raidname/encounterId/Gildenlogo aus der Antwort."""
     if not isinstance(raw_response, dict):
         return {}
     boss = raw_response.get("boss") or {}
     raid = raw_response.get("raid") or {}
+    guild = raw_response.get("guild") or {}
     return {
         "boss_name": boss.get("name"),
         "boss_ordinal": boss.get("ordinal"),
         "raid_name": raid.get("name"),
         "encounter_id": boss.get("encounterId"),
+        "guild_logo": guild.get("logo"),
     }
 
 

@@ -8,7 +8,11 @@
 
   <header class="topbar">
     <div class="brand">
+      {% if meta.guild_logo %}
+      <img class="brand-logo" src="{{ meta.guild_logo }}" alt="{{ guild.label }} Logo" onerror="this.remove()">
+      {% else %}
       <span class="brand-mark" aria-hidden="true"></span>
+      {% endif %}
       <div class="brand-text">
         <span class="brand-title">Race to World First</span>
         <span class="brand-sub">
@@ -25,7 +29,7 @@
     </button>
   </header>
 
-  {{ render_nav(mode, n, guild_key, guilds) }}
+  {{ render_nav(mode, n, guild_key, guilds, guild_logos) }}
 
   <main class="content">
     {% if error %}

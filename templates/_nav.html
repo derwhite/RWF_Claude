@@ -1,10 +1,13 @@
-{% macro render_nav(mode, n, guild_key, guilds) %}
+{% macro render_nav(mode, n, guild_key, guilds, guild_logos={}) %}
 {% set is_compare = guild_key == 'compare' %}
 <nav class="guild-tabs" aria-label="Ansicht waehlen">
   {% for key, g in guilds.items() %}
   <a href="{{ url_for('table_view', mode=mode, n=n, guild=key) }}"
      class="guild-tab{{ ' active' if key == guild_key else '' }}"
-     style="--tab-accent: {{ g.color }}">{{ g.label }}</a>
+     style="--tab-accent: {{ g.color }}">
+    {% if guild_logos.get(key) %}<img class="tab-logo" src="{{ guild_logos[key] }}" alt="" loading="lazy" onerror="this.remove()">{% endif %}
+    {{ g.label }}
+  </a>
   {% endfor %}
   <a href="{{ url_for('compare_view', mode=mode, n=n) }}"
      class="guild-tab compare-tab{{ ' active' if is_compare else '' }}">⇄ Vergleich</a>

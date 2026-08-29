@@ -23,7 +23,7 @@
     </button>
   </header>
 
-  {{ render_nav(mode, n, 'compare', guilds) }}
+  {{ render_nav(mode, n, 'compare', guilds, guild_logos) }}
 
   <main class="content">
     {% if boss_mismatch %}
@@ -42,6 +42,7 @@
               <th class="col-rank" title="{{ 'Rang: 1 = neuester Pull' if mode == 'last' else 'Rang: 1 = bester Pull' }}">#</th>
               {% for col in columns %}
               <th style="--col-accent: {{ col.guild.color }}">
+                {% if col.meta.guild_logo %}<img class="compare-th-logo" src="{{ col.meta.guild_logo }}" alt="" loading="lazy" onerror="this.remove()">{% endif %}
                 <span class="compare-th-label">{{ col.guild.label }}</span>
                 {% if col.error %}<span class="col-error-flag" title="{{ col.error }}">⚠</span>{% endif %}
                 {% if col.meta.boss_name %}

@@ -11,7 +11,7 @@ from config import (
     RAID_SLUG,
     DIFFICULTY,
 )
-from raiderio_client import get_attempts, fetch_boss_attempts_raw, RaiderIOError
+from raiderio_client import get_attempts, fetch_boss_attempts_raw, get_guild_logo, RaiderIOError
 
 app = Flask(__name__)
 
@@ -25,6 +25,11 @@ def _resolve_guild(guild_key: str) -> str:
     if key not in GUILDS:
         abort(404, description=f"Unbekannte Gilde '{key}'.")
     return key
+
+
+def _guild_logos() -> dict:
+    """Bisher bekannte Gilden-Logos fuer die Navigation (siehe raiderio_client-Cache)."""
+    return {key: get_guild_logo(key) for key in GUILDS}
 
 
 @app.route("/")
@@ -59,6 +64,7 @@ def table_view(mode, n):
         difficulty=DIFFICULTY,
         boss_slug=BOSS_SLUG,
         debug_routes=DEBUG_ROUTES,
+        guild_logos=_guild_logos(),
     )
 
 
@@ -98,6 +104,7 @@ def compare_view(mode, n):
         boss_mismatch=boss_mismatch,
         raid_slug=RAID_SLUG,
         difficulty=DIFFICULTY,
+        guild_logos=_guild_logos(),
     )
 
 
