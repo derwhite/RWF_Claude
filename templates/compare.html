@@ -12,9 +12,8 @@
       <div class="brand-text">
         <span class="brand-title">Race to World First</span>
         <span class="brand-sub">
-          {{ meta.raid_name or (raid_slug | replace('-', ' ') | title) }}
-          {%- if meta.boss_name %} · {{ meta.boss_name }}{% if meta.boss_ordinal %} (#{{ meta.boss_ordinal }}){% endif %}{% endif %}
-          · {{ difficulty | capitalize }}
+          {{ meta.raid_name or (raid_slug | replace('-', ' ') | title) }} · {{ difficulty | capitalize }}
+          <span class="brand-hint">· Boss je Gilde s. Tabellenkopf</span>
         </span>
       </div>
     </div>
@@ -27,6 +26,12 @@
   {{ render_nav(mode, n, 'compare', guilds) }}
 
   <main class="content">
+    {% if boss_mismatch %}
+      <div class="banner banner-notice">
+        <strong>⚠ Gilden sind aktuell auf unterschiedlichen Bossen.</strong>
+        <p>Die Werte in dieser Tabelle sind daher nur bedingt vergleichbar – schau dir den Bossnamen je Spalte im Tabellenkopf an.</p>
+      </div>
+    {% endif %}
     {% if not columns %}
       <div class="banner banner-empty"><strong>Keine Gilden konfiguriert.</strong></div>
     {% else %}
@@ -39,6 +44,11 @@
               <th style="--col-accent: {{ col.guild.color }}">
                 <span class="compare-th-label">{{ col.guild.label }}</span>
                 {% if col.error %}<span class="col-error-flag" title="{{ col.error }}">⚠</span>{% endif %}
+                {% if col.meta.boss_name %}
+                <span class="compare-th-boss{{ ' boss-mismatch' if boss_mismatch else '' }}">
+                  {{ col.meta.boss_name }}{% if col.meta.boss_ordinal %} (#{{ col.meta.boss_ordinal }}){% endif %}
+                </span>
+                {% endif %}
               </th>
               {% endfor %}
             </tr>

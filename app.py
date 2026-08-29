@@ -84,6 +84,8 @@ def compare_view(mode, n):
             rows.append(row)
 
     display_meta = next((col["meta"] for col in columns if col["meta"].get("boss_name")), {})
+    boss_names = {col["meta"]["boss_name"] for col in columns if col["meta"].get("boss_name")}
+    boss_mismatch = len(boss_names) > 1
 
     return render_template(
         "compare.html",
@@ -93,6 +95,7 @@ def compare_view(mode, n):
         columns=columns,
         rows=rows,
         meta=display_meta,
+        boss_mismatch=boss_mismatch,
         raid_slug=RAID_SLUG,
         difficulty=DIFFICULTY,
     )
