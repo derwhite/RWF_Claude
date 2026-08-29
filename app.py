@@ -1,0 +1,83 @@
+from flask import Flask, render_template, redirect, url_for, abort, jsonify, request
+
+from config import (
+    GUILDS,
+    DEFAULT_GUILD,
+    MIN_ENTRIES,
+    MAX_ENTRIES,
+    DEFAULT_ENTRIES,
+    DEBUG_ROUTES,
+    BOSS_SLUG,
+    RAID_SLUG,
+    DIFFICULTY,
+)
+from raiderio_client import get_attempts, fetch_boss_attempts_raw, RaiderIOError
+
+app = Flask(__name__)
+
+
+def _clamp_n(n: int) -> int:
+    return max(MIN_ENTRIES, min(MAX_ENTRIES, n))
+
+
+def _resolve_guild(guild_key: str) -> str:
+    key = (guild_key or DEFAULT_GUILD).lower()
+    if key not in GUILDS:
+        abort(404, description=f"Unbekannte Gilde '{key}'.")
+    return key
+
+
+@app.route("/")
+def index():
+    return redirect(url_for("table_view", mode="last", n=DEFAULT_ENTRIES))
+
+
+@app.route("/<any(last,best):mode>/<int:n>")
+def table_view(mode, n):
+    n = _clamp_n(n)
+    guild_key = _resolve_guild(request.args.get("guild"))
+
+    error = None
+    attempts = []
+    try:
+        attempts = get_attempts(guild_key, mode, n)
+    except RaiderIOError as exc:
+        error = str(exc)
+
+    return render_template(
+        "table.html",
+        mode=mode,
+        n=n,
+        guild_key=guild_key,
+        guilds=GUILDS,
+        guild=GUILDS[guild_key],
+        attempts=attempts,
+        error=error,
+        raid_slug=RAID_SLUG,
+        difficulty=DIFFICULTY,
+        boss_slug=BOSS_SLUG,
+        debug_routes=DEBUG_ROUTES,
+    )
+
+
+if DEBUG_ROUTES:
+
+    @app.route("/debug/<guild_key>")
+    def debug_raw(guild_key):
+        guild_key = _resolve_guild(guild_key)
+        try:
+            raw = fetch_boss_attempts_raw(guild_key)
+        except RaiderIOError as exc:
+            return jsonify({"error": str(exc)}), 502
+        return jsonify(raw)
+
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("error.html", message=getattr(e, "description", "Seite nicht gefunden.")), 404
+
+
+if __name__ == "__main__":
+    # Nur fuer lokale Entwicklung mit Auto-Reload.
+    # Fuer den produktiven Betrieb: python serve.py (waitress)
+    app.run(debug=True, port=5000)
