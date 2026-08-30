@@ -57,11 +57,6 @@ Phasen-Label angezeigt, keine Phasen-Prozentzahl.
 from typing import Optional
 
 PHASE_DEFINITIONS = {
-    # TODO: Fuer jeden zu trackenden Boss die echte encounterId sowie die
-    # tatsaechliche Phasenlogik eintragen. Beispiel fuer einen Boss mit
-    # 2 Minuten fixer Startphase, Ausfuehrungsphase ab 40% und einer
-    # Zwischenphase dazwischen:
-    #
     197169: {
         "phases": [
             {
@@ -77,12 +72,12 @@ PHASE_DEFINITIONS = {
             {
                 "label": "P3",
                 "when": {"type": "percent_max", "percent": 30},
-                "percent_range": (0, 30),
+                "percent_range": (30, 0),
             },
             {
                 "label": "I1",
                 "when": {"type": "always"},
-                "percent_range": (30, 40),
+                "percent_range": (40, 30),
             },
         ],
     },
