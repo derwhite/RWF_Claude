@@ -53,8 +53,8 @@ eine zeitbasierte Phase wie P1 oben kann (muss aber nicht) einen
 percent_range fuer die Anzeige bekommen. Ohne percent_range wird nur das
 Phasen-Label angezeigt, keine Phasen-Prozentzahl.
 """
-from typing import Optional
 
+from typing import Optional
 
 PHASE_DEFINITIONS = {
     # TODO: Fuer jeden zu trackenden Boss die echte encounterId sowie die
@@ -62,25 +62,30 @@ PHASE_DEFINITIONS = {
     # 2 Minuten fixer Startphase, Ausfuehrungsphase ab 40% und einer
     # Zwischenphase dazwischen:
     #
-    # 197169: {
-    #     "phases": [
-    #         {
-    #             "label": "P1",
-    #             "when": {"type": "time_max", "seconds": 120},
-    #             "percent_range": (100, 70),
-    #         },
-    #         {
-    #             "label": "P3",
-    #             "when": {"type": "percent_max", "percent": 40},
-    #             "percent_range": (40, 0),
-    #         },
-    #         {
-    #             "label": "P2",
-    #             "when": {"type": "always"},
-    #             "percent_range": (70, 40),
-    #         },
-    #     ],
-    # },
+    197169: {
+        "phases": [
+            {
+                "label": "P1",
+                "when": {"type": "percent_min", "percent": 70},
+                "percent_range": (100, 70),
+            },
+            {
+                "label": "P2",
+                "when": {"type": "percent_min", "percent": 40},
+                "percent_range": (70, 40),
+            },
+            {
+                "label": "P3",
+                "when": {"type": "percent_max", "percent": 30},
+                "percent_range": (0, 30),
+            },
+            {
+                "label": "I1",
+                "when": {"type": "always"},
+                "percent_range": (30, 40),
+            },
+        ],
+    },
 }
 
 
