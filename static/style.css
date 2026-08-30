@@ -519,6 +519,7 @@ html[data-theme="light"] .theme-icon-light { display: inline; }
   font-family: var(--font-mono);
   background: color-mix(in srgb, var(--guild-accent, #5b8def) 16%, transparent);
   color: var(--guild-accent, #5b8def);
+  white-space: nowrap;
 }
 
 .encounter-id {

@@ -76,22 +76,34 @@ Eintrag im `GUILDS`-Dict (inkl. Akzentfarbe für die Tabs).
 
 Raider.io liefert keine Phaseninformationen. `phases.py` bietet daher eine
 eigene Funktion `get_phase(encounter_id, overall_percent, duration_seconds)`,
-die anhand von manuell hinterlegten Grenzwerten (`PHASE_DEFINITIONS`) eine
-Phase wie "P1" zurückgibt – wahlweise Prozent-basiert (z. B. P1: 100-70%)
-oder Zeit-basiert (z. B. P1: erste 2 Minuten). Die `encounterId` des
-aktuellen Bosses steht klein im Seiten-Header (z. B. `#197169`).
+die pro Boss individuell konfigurierbar ist:
+
+- **Phasen-Erkennung** je Phase entweder zeit- oder prozentbasiert (auch
+  gemischt pro Boss möglich, z. B. "P1 = feste ersten 2 Minuten, P3 =
+  immer ab 40% - unabhängig von der Zeit"). Die Phasen werden in der
+  Reihenfolge der Liste geprüft, die erste zutreffende Regel gewinnt.
+- **Phasen-relative Prozentanzeige**: zusätzlich zu overallPercent wird
+  angezeigt, wie viel "HP" innerhalb der aktuellen Phase noch übrig ist
+  (z. B. "P1 · 23.33%" bei 77% Overall in einer P1 von 100-70%).
 
 ```python
 # phases.py
 PHASE_DEFINITIONS = {
     197169: {
-        "mode": "percent",
-        "phases": [("P1", 100), ("P2", 70), ("P3", 40)],
+        "phases": [
+            {"label": "P1", "when": {"type": "time_max", "seconds": 120}, "percent_range": (100, 70)},
+            {"label": "P3", "when": {"type": "percent_max", "percent": 40}, "percent_range": (40, 0)},
+            {"label": "P2", "when": {"type": "always"}, "percent_range": (70, 40)},
+        ],
     },
 }
 ```
 
-Ohne Eintrag für eine `encounterId` wird einfach keine Phase angezeigt.
+Details zu allen verfügbaren `when`-Typen (`time_max`, `time_min`,
+`percent_max`, `percent_min`, `always`) stehen als Kommentar direkt in
+`phases.py`. Die `encounterId` des aktuellen Bosses steht klein im
+Seiten-Header. Ohne Eintrag für eine `encounterId` wird einfach keine
+Phase angezeigt.
 
 ## Projektstruktur
 

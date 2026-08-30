@@ -268,7 +268,9 @@ def get_attempts(guild_key: str, mode: str, n: int):
     meta = get_boss_meta(raw_response)
     encounter_id = meta.get("encounter_id")
     for a in attempts:
-        a["phase"] = phases.get_phase(encounter_id, a["percent"], a["duration_seconds"])
+        phase_info = phases.get_phase(encounter_id, a["percent"], a["duration_seconds"])
+        a["phase"] = phase_info["label"]
+        a["phase_percent"] = phase_info["percent"]
 
     if mode == "best":
         attempts.sort(

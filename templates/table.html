@@ -65,7 +65,11 @@
               <div class="hp-bar-wrap">
                 <div class="hp-bar" style="--pct: {{ a.percent if a.percent is not none else 100 }}%"></div>
                 <span class="hp-label mono">{{ '%.1f%%'|format(a.percent) if a.percent is not none else '–' }}</span>
-                {% if a.phase %}<span class="phase-tag">{{ a.phase }}</span>{% endif %}
+                {% if a.phase %}
+                <span class="phase-tag">
+                  {{ a.phase }}{% if a.phase_percent is not none %} · {{ '%.2f'|format(a.phase_percent) }}%{% endif %}
+                </span>
+                {% endif %}
                 {% if a.is_kill %}<span class="badge badge-kill">Kill</span>{% endif %}
               </div>
             </td>
